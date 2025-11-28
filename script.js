@@ -1,70 +1,93 @@
-const apiKey = "957e7237";
 
-// Get HTML elements
-const moviesContainer = document.getElementById("movies");
-const searchBox = document.getElementById("search-box");
+let productsContainer = [];
 
-// Function to get movies from the API
-function fetchMovies(query = "batman") {
-    // Build the URL using the search word
-    const url = `https://www.omdbapi.com/?apikey=${apiKey}&s=${query}`;
+let productsSpace = document.getElementById('products');
+let searchInput = document.getElementById('search');
 
-    // Call the API using fetch()
-    fetch(url)
-        .then(response => response.json()) // Convert response to JSON
-        .then(data => {
-            // Clear previous content before showing new movies
-            moviesContainer.innerHTML = "";
+const smartphonesURL = "https://dummyjson.com/products/category/smartphones";
+const laptopsURL = "https://dummyjson.com/products/category/laptops";
 
-            // Check if there are results
-            if (data.Search) {
-                // Loop through all movies found
-                data.Search.forEach(movie => {
-                    // Create a new <div> for each movie
-                    const div = document.createElement("div");
-                    div.className = "movie";
+// fetch smartphones Data
+fetch(smartphonesURL)
+    .then(response => response.json())
+    .then(smartphonesData => {
+        productsContainer = smartphonesData.products;
 
-                    // Conditional image: use placeholder if no poster
-                    const image =
-                        movie.Poster !== "N/A"
-                            ? movie.Poster
-                            : "https://via.placeholder.com/300x400?text=No+Image";
+        return fetch(laptopsURL).then(response => response.json())
+    })
+    .then(laptopsData => {
+        productsContainer = productsContainer.concat(laptopsData.products);
 
-                    // Add movie info inside the div
-                    div.innerHTML = `
-            <img src="${image}" alt="${movie.Title}">
-            <h3>${movie.Title}</h3>
-            <p>${movie.Year}</p>
-          `;
+        // Display data function
+        displayProducts(productsContainer)
+    })
+    .catch(error => {
+        productsSpace.innerHTML = 
+            `<p style="font-size: 18px; color: red;">
+                Something is wrong!
+                ${error}. try again later.
+            </p>`;
+        console.error("Error fetching data :", error.message);
+    })
 
-                    // Add this movie div to the page
-                    moviesContainer.appendChild(div);
-                });
-            } else {
-                // If no movies found
-                moviesContainer.innerHTML = "<p>No movies found</p>";
-            }
+    // function to display Products
+    function displayProducts(productsContainer) {
+        productsSpace.innerHTML = "";
+        if (productsContainer.length === 0) {
+            productsSpace.innerHTML = `<p style="color=#fff; font-size: 20px;">No products found.</p>`;
+            return;
+        }
+
+        productsContainer.forEach(product => {
+            const card = document.createElement('div');
+            card.className = "card";
+            card.innerHTML = `
+                <div class="card-img-wrapper">
+                    <div class="card-badge"><i class="fa-solid fa-bolt"></i></div>
+                    <img src="${product.thumbnail}" alt="${product.title}">
+                </div>
+                <div class="card-body">
+                    <div class="card-title" title="${product.title}">${product.title}</div>
+                        <div class="card-category">${product.category}</div>
+                        <div class="card-footer">
+                            <div class="price">$${product.price}</div>
+                            <div class="add-btn"><i class="fa-regular fa-circle-check"></i></div>
+                        </div>
+                </div>
+            `
+            productsSpace.appendChild(card)
         })
-        .catch(error => {
-            console.error("Error while fetching:", error);
-        });
-}
-
-// Show default movies when the page loads
-window.addEventListener("load", () => {
-    fetchMovies();
-});
-
-//  Search dynamically while typing
-searchBox.addEventListener("input", () => {
-    const text = searchBox.value.trim();
-
-    // If user types more than 2 letters → search
-    if (text.length > 2) {
-        fetchMovies(text);
     }
-    // If input is empty → show default movies again
-    else if (text.length === 0) {
-        fetchMovies();
-    }
+
+// search function 
+searchInput.addEventListener('input', (e) => {
+    const text = e.target.value.toLowerCase();
+    const productFiltered = productsContainer.filter(p => 
+        p.title.toLowerCase().includes(text)
+    );
+    displayProducts(productFiltered);
+})
+
+//swiper
+let gallerySwiper = new Swiper(".myGallerySwiper", {
+    slidesPerView: 1, 
+    spaceBetween: 30, 
+    loop: true,       
+    autoplay: {      
+        delay: 3500,  
+        disableOnInteraction: false,
+    },
+    breakpoints: {
+        640: { slidesPerView: 1.5, centeredSlides: true, },
+        768: { slidesPerView: 2.5, centeredSlides: true, },
+        1024: { slidesPerView: 3.5, centeredSlides: true, },
+    },
+    navigation: {
+        nextEl: ".gallery-next",
+        prevEl: ".gallery-prev",
+    },
+    pagination: {
+        el: ".gallery-pagination",
+        clickable: true, 
+    },
 });
